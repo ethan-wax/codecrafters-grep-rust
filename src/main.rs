@@ -9,7 +9,11 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
         return input_line.chars().any(|c| c.is_digit(10));
     } else if pattern == r"\w" {
         return input_line.chars().any(|c| c.is_alphanumeric() || c == '_');
-    } else if pattern.chars().nth(0) == Some('[') && pattern.chars().last() == Some(']') {
+    } else if pattern.starts_with("[^") && pattern.ends_with(']') {
+        let start = 1 as usize;
+        let end = pattern.len() - 1;
+        return input_line.chars().any(|c| !pattern[start..end].contains(c));
+    } else if pattern.starts_with('[') && pattern.ends_with(']') {
         let start = 1 as usize;
         let end = pattern.len() - 1;
         return input_line.chars().any(|c| pattern[start..end].contains(c));
