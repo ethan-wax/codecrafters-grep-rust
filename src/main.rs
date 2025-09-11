@@ -2,31 +2,60 @@ use std::env;
 use std::io;
 use std::process;
 
-fn match_pattern(input_line: &str, pattern: &str) -> bool {
+fn match_helper(input_line: &str, pattern: &str) -> bool {
+    let c = input_line.chars().nth(0).unwrap();
     if pattern.chars().count() == 1 {
-        return input_line.contains(pattern);
+        c.to_string() == pattern
     } else if pattern == r"\d" {
-        return input_line.chars().any(|c| c.is_digit(10));
+        c.is_digit(10)
     } else if pattern == r"\w" {
-        return input_line.chars().any(|c| c.is_alphanumeric() || c == '_');
+        c.is_alphanumeric() || c.to_string() == "_"
     } else if pattern.starts_with("[^") && pattern.ends_with(']') {
         let start = 1 as usize;
         let end = pattern.len() - 1;
-        return input_line.chars().any(|c| !pattern[start..end].contains(c));
+        !pattern[start..end].contains(c)
     } else if pattern.starts_with('[') && pattern.ends_with(']') {
         let start = 1 as usize;
         let end = pattern.len() - 1;
-        return input_line.chars().any(|c| pattern[start..end].contains(c));
+        pattern[start..end].contains(c)
     } else {
         panic!("Unhandled pattern: {}", pattern)
     }
 }
 
+fn match_pattern(input_line: &str, pattern: &str) -> bool {
+    if pattern == "" {
+        return true;
+    } else if input_line == "" {
+        return false;
+    }
+
+    let first_pattern = if pattern.starts_with('[') {
+        let start = 0 as usize;
+        let end = pattern.find(']').expect("Missing ]");
+        &pattern[start..end + 1]
+    } else if pattern.starts_with(r"\") {
+        match pattern.chars().nth(1) {
+            Some(c) if c == 'd' || c == 'w' => &pattern[0..2],
+            Some(_) | None => {
+                return false;
+            }
+        }
+    } else {
+        &pattern[0..1]
+    };
+
+    if !match_helper(&input_line, first_pattern) {
+        let new_input : String= input_line.chars().skip(1).collect();
+        return match_pattern(new_input.as_str(), pattern);
+    }
+
+    let pattern_len = first_pattern.chars().count();
+    return match_pattern(&input_line[1..], &pattern[pattern_len..]);
+}
+
 // Usage: echo <input_text> | your_program.sh -E <pattern>
 fn main() {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    eprintln!("Logs from your program will appear here!");
-
     if env::args().nth(1).unwrap() != "-E" {
         println!("Expected first argument to be '-E'");
         process::exit(1);
