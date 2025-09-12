@@ -27,32 +27,32 @@ fn match_here(input_line: &str, patterns: &Vec<String>) -> bool {
     for pat in patterns {
         let c = match input_line.chars().nth(i) {
             Some(c) => c,
-            None => return false
+            None => return pat == "$",
         };
 
         if !match_char(&c, pat.as_str()) {
-            return false
+            return false;
         }
         i = i + 1;
-    };
-    return true
+    }
+    return true;
 }
 
 fn check_clear(buf: &String, c: &char) -> bool {
     if buf.starts_with('[') && buf.ends_with(']') {
-        return true
+        return true;
     } else if *buf == "\\d" || buf == "\\w" {
-        return true
+        return true;
     } else if buf.starts_with('\\') && *c != 'd' && *c != 'w' {
-        return true
+        return true;
     } else if buf.chars().count() == 1 {
         let first = buf.chars().nth(0).unwrap();
         if first == '[' || first == '\\' {
-            return false
+            return false;
         }
-        return true
+        return true;
     } else {
-        return false
+        return false;
     }
 }
 
@@ -81,10 +81,10 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
     for i in 0..input_line.chars().count() {
         let new_input: String = input_line.chars().skip(i).collect();
         if match_here(&new_input.as_str(), &patterns) {
-            return true
+            return true;
         }
     }
-    return false
+    return false;
 }
 
 // Usage: echo <input_text> | your_program.sh -E <pattern>
