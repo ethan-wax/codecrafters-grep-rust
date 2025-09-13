@@ -17,6 +17,9 @@ fn match_char(c: &char, pattern: &str) -> bool {
         let start = 1 as usize;
         let end = pattern.len() - 1;
         pattern[start..end].contains(*c)
+    } else if pattern.ends_with('+') {
+        let start = pattern.chars().nth(0).unwrap();
+        *c == start
     } else {
         panic!("Unhandled pattern: {}", pattern)
     }
@@ -33,6 +36,16 @@ fn match_here(input_line: &str, patterns: &Vec<String>) -> bool {
         if !match_char(&c, pat.as_str()) {
             return false;
         }
+
+        if pat.ends_with("+") {
+            let new_input: String = input_line.chars().skip(i + 1).collect();
+            let pos = patterns.iter().position(|s| s == pat).unwrap();
+            let new_patterns = patterns.iter().skip(pos).map(|s| s.clone()).collect();
+            if match_here(&new_input.as_str(), &new_patterns) {
+                return true;
+            }
+        }
+
         i = i + 1;
     }
     return true;
@@ -47,9 +60,11 @@ fn check_clear(buf: &String, c: &char) -> bool {
         return true;
     } else if buf.chars().count() == 1 {
         let first = buf.chars().nth(0).unwrap();
-        if first == '[' || first == '\\' {
+        if first == '[' || first == '\\' || *c == '+' {
             return false;
         }
+        return true;
+    } else if buf.contains('+') {
         return true;
     } else {
         return false;
