@@ -3,7 +3,9 @@ use std::io;
 use std::process;
 
 fn match_char(c: &char, pattern: &str) -> bool {
-    if pattern.chars().count() == 1 {
+    if pattern == "." {
+        true
+    } else if pattern.chars().count() == 1 {
         c.to_string() == pattern
     } else if pattern == r"\d" {
         c.is_digit(10)
@@ -18,6 +20,9 @@ fn match_char(c: &char, pattern: &str) -> bool {
         let end = pattern.len() - 1;
         pattern[start..end].contains(*c)
     } else if pattern.ends_with('+') || pattern.ends_with('?') {
+        if pattern.starts_with(".") {
+            return true;
+        }
         let start = pattern.chars().nth(0).unwrap();
         *c == start
     } else {
