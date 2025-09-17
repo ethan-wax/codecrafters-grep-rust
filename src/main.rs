@@ -2,6 +2,11 @@ use std::env;
 use std::io;
 use std::process;
 
+pub mod lexer;
+pub mod parser;
+use lexer::{Token, tokenize};
+use parser::{Pattern, parse};
+
 fn match_char(c: &char, pattern: &str) -> bool {
     if pattern == "." {
         true
@@ -33,6 +38,27 @@ fn match_char(c: &char, pattern: &str) -> bool {
 fn match_here(input_line: &str, patterns: &Vec<String>) -> bool {
     let mut i = 0;
     for pat in patterns {
+        if pat.contains('|') {
+            let new_input: String = input_line.chars().skip(i).collect();
+            let pos = pat.find("|").unwrap();
+            let left: String = pat.chars().skip(1).take(pos - 1).collect();
+            let pat_len = pat.len();
+            let right: String = pat.chars().skip(pos + 1).take(pat_len - pos - 2).collect();
+            let pat_pos = patterns.iter().position(|s| s == pat).unwrap();
+            let suffix: String = patterns
+                .iter()
+                .skip(pat_pos + 1)
+                .cloned()
+                .collect::<Vec<String>>()
+                .join("");
+            let left_str = format!("^{}{}", left, suffix);
+            let right_str = format!("^{}{}", right, suffix);
+            println!("{}", new_input);
+            println!("{}", left_str);
+            println!("{}", right_str);
+            return match_pattern(&new_input, &left_str) || match_pattern(&new_input, &right_str);
+        }
+
         let c = match input_line.chars().nth(i) {
             Some(c) => c,
             None => return pat == "$",
@@ -41,7 +67,7 @@ fn match_here(input_line: &str, patterns: &Vec<String>) -> bool {
         let m = match_char(&c, pat.as_str());
         let q = pat.ends_with('?');
 
-        if !m && ! q {
+        if !m && !q {
             return false;
         }
 
@@ -61,25 +87,6 @@ fn match_here(input_line: &str, patterns: &Vec<String>) -> bool {
     return true;
 }
 
-fn check_clear(buf: &String, c: &char) -> bool {
-    if buf.starts_with('[') && buf.ends_with(']') {
-        return true;
-    } else if *buf == "\\d" || buf == "\\w" {
-        return true;
-    } else if buf.starts_with('\\') && *c != 'd' && *c != 'w' {
-        return true;
-    } else if buf.chars().count() == 1 {
-        let first = buf.chars().nth(0).unwrap();
-        if first == '[' || first == '\\' || *c == '+' || *c == '?' {
-            return false;
-        }
-        return true;
-    } else if buf.contains('+') || buf.contains('?') {
-        return true;
-    } else {
-        return false;
-    }
-}
 
 fn match_pattern(input_line: &str, pattern: &str) -> bool {
     if pattern == "" {
