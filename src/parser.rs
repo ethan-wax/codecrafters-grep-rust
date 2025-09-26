@@ -41,8 +41,10 @@ fn parse_expr(char_vec: &mut VecDeque<char>) -> Expr {
     let first = char_vec.pop_front().unwrap();
     let mut left_expr = match first {
         '^' => Expr::START,
-        '?' => Expr::QMARK(Box::new(Expr::BLANK)),
-        '+' => Expr::PLUS(Box::new(Expr::BLANK)),
+        '?' => {
+            return Expr::QMARK(Box::new(Expr::BLANK))
+        }
+        '+' => return Expr::PLUS(Box::new(Expr::BLANK)),
         '$' => Expr::END,
         '(' => Expr::PAREN(Box::new(parse_paren(char_vec))),
         '[' => Expr::BRACKET(parse_bracket(char_vec)),
@@ -69,8 +71,11 @@ fn parse_paren(char_vec: &mut VecDeque<char>) -> Paren {
     let mut char_buf = VecDeque::new();
     while !char_vec.is_empty() {
         let first = char_vec.pop_front().unwrap();
-        if first == '|' || first == ')' {
-            paren = Paren::CONS(parse_expr(&mut char_buf), Box::new(paren))
+        if first == '|' {
+            paren = Paren::CONS(parse_expr(&mut char_buf), Box::new(paren));
+        } else if first == ')' {
+            paren = Paren::CONS(parse_expr(&mut char_buf), Box::new(paren));
+            break;
         } else {
             char_buf.push_back(first);
         }
@@ -86,7 +91,7 @@ fn parse_bracket(char_vec: &mut VecDeque<char>) -> Brackets {
         return Brackets::POS(Vec::new());
     }
     char_vec.push_front(first);
-    v.push(parse_single(first));
+    v.push(parse_single(char_vec));
     while !char_vec.is_empty() {
         let c = char_vec.pop_front().unwrap();
         if c == ']' {
